@@ -2,14 +2,14 @@
 
 ## Overview
 
-This setup enables testing the Geolocation API on mobile devices by providing HTTPS access through nginx reverse proxy on the `geoloc-docker-network`.
+This setup enables testing the Geolocation API on mobile devices by providing HTTPS access through nginx reverse proxy on the `trilhos-docker-network`.
 
 ## Architecture
 
 ```text
 [Mobile Device] --> HTTPS:443 --> [nginx:alpine] --> HTTP:3000 --> [Next.js App]
                                         |
-                                  geoloc-docker-network
+                                  trilhos-docker-network
 ```
 
 ## Components
@@ -28,7 +28,7 @@ This setup enables testing the Geolocation API on mobile devices by providing HT
 
 - **Image**: Built from [Dockerfile](Dockerfile)
 - **Internal Port**: 3000 (not exposed to host)
-- **Network**: `geoloc-docker-network`
+- **Network**: `trilhos-docker-network`
 - **Healthcheck**: wget on [http://localhost:3000](http://localhost:3000)
 
 ### 3. SSL Certificates
@@ -92,4 +92,4 @@ This mounts your source code and runs `next dev` with file watching enabled.
 ### Container issues?
 
 - Check logs: `docker compose logs nginx` or `docker compose logs web`
-- Verify network: `docker network inspect geoloc-docker-network`
+- Verify network: `docker network inspect trilhos-docker-network`
