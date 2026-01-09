@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   async headers() {
     const devOrigin = process.env.DEV_CORS_ORIGIN ?? "http://localhost:3000";
-    const prodOrigin = process.env.CORS_ALLOWED_ORIGIN ?? devOrigin;
+    // In production, do not fall back to the development origin; use an explicit value or a safe default.
+    const prodOrigin = process.env.CORS_ALLOWED_ORIGIN ?? "";
     const corsOrigin = process.env.NODE_ENV === "production" ? prodOrigin : devOrigin;
     
     const commonHeaders = [
