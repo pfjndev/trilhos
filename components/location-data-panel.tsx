@@ -94,7 +94,7 @@ export function LocationDataPanel({ currentPosition, route, isTracking }: Locati
     {
       icon: Clock,
       label: "Last Update",
-      value: currentPosition ? new Date(currentPosition.timestamp).toLocaleTimeString("pt-PT") : "—",
+      value: currentPosition ? new Date(currentPosition.timestamp).toLocaleTimeString() : "—",
     },
   ]
 

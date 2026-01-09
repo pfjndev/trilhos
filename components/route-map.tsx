@@ -11,26 +11,35 @@ interface RouteMapProps {
 
 export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<any>(null)
-  const polylineRef = useRef<any>(null)
-  const markerRef = useRef<any>(null)
+  const mapRef = useRef<L.Map | null>(null)
+  const polylineRef = useRef<L.Polyline | null>(null)
+  const markerRef = useRef<L.CircleMarker | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [L, setL] = useState<any>(null)
+  const [L, setL] = useState<typeof import("leaflet") | null>(null)
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const link = document.createElement("link")
+    if (typeof window === "undefined") return
+    const href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    let link = document.querySelector<HTMLLinkElement>(`link[rel="stylesheet"][href="${href}"]`)
+    let addedLink = false
+    if (!link) {
+      link = document.createElement("link")
       link.rel = "stylesheet"
-      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      link.href = href
       link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       link.crossOrigin = ""
       document.head.appendChild(link)
-
-      // Dynamically import leaflet only on client side
-      import("leaflet").then((leafletModule) => {
-        setL(leafletModule.default)
-        setIsLoaded(true)
-      })
+      addedLink = true
+    }
+    // Dynamically import leaflet only on client side
+    import("leaflet").then((leafletModule) => {
+      setL(leafletModule.default)
+      setIsLoaded(true)
+    })
+    return () => {
+      if (addedLink && link && document.head.contains(link)) {
+        document.head.removeChild(link)
+      }
     }
   }, [])
 
