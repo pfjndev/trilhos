@@ -48,7 +48,7 @@ Generate a self-signed SSL certificate:
 ### Test from your phone (LAN)
 
 1. Generate SSL certificates: `./nginx/generate-ssl.sh`
-2. Find your Mac LAN IP: `ipconfig getifaddr en0`
+2. Find your LAN IP (examples: macOS: `ipconfig getifaddr en0`, Linux: `hostname -I`, Windows: `ipconfig`)
 3. Start the containers: `docker compose up --build`
 4. On your phone, navigate to `https://LAN_IP`
 5. Accept the self-signed certificate warning (required for geolocation API)
