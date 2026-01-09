@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev'],
   async headers() {
-    const devOrigin = process.env.DEV_CORS_ORIGIN ?? "http://localhost:3000";
+    const devOrigin = process.env.DEV_CORS_ORIGIN ?? allowedDevOrigins;
     // In production, do not fall back to the development origin; use an explicit value or a safe default.
     const prodOrigin = process.env.CORS_ALLOWED_ORIGIN ?? "";
     const corsOrigin = process.env.NODE_ENV === "production" ? prodOrigin : devOrigin;
