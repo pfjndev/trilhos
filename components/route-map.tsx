@@ -38,7 +38,8 @@ export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) 
     })
     return () => {
       if (addedLink && link && document.head.contains(link)) {
-        document.head.removeChild(link)
+        // Concurrency issue, #TODO use ref instead for removal
+        //document.head.removeChild(link)
       }
     }
   }, [])
