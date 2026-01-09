@@ -1,5 +1,5 @@
 # Multi-stage build for Next.js app
-FROM node:current-alpine AS base
+FROM node:25-alpine AS base
 WORKDIR /app
 
 # Install production deps separately for a slimmer runtime image
@@ -27,6 +27,11 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./next.config.ts
+
+# Create non-root user and adjust permissions
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001 -G nodejs
+RUN chown -R nextjs:nodejs /app
+USER nextjs
 
 EXPOSE 3000
 CMD ["npm", "run", "start"]
