@@ -29,7 +29,7 @@ This setup enables testing the Geolocation API on mobile devices by providing HT
 - **Image**: Built from [Dockerfile](Dockerfile)
 - **Internal Port**: 3000 (not exposed to host)
 - **Network**: `trilhos-docker-network`
-- **Healthcheck**: wget on [http://localhost:3000](http://localhost:3000)
+- **Healthcheck**: Node.js HTTP request to [http://localhost:3000](http://localhost:3000)
 
 ### 3. SSL Certificates
 
