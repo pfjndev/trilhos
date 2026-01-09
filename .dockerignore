@@ -1,0 +1,12 @@
+.next
+node_modules
+npm-debug.log
+.dockerignore
+.git
+.gitignore
+coverage
+*.log
+.DS_Store
+.env*
+nginx/ssl
+agents.md
