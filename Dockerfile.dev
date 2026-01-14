@@ -1,0 +1,19 @@
+# Development Dockerfile with hot reload support
+FROM node:25-alpine
+WORKDIR /app
+
+# Required for native dependencies
+RUN apk add --no-cache libc6-compat
+
+# Auto-update npm to latest version
+RUN npm install -g npm
+
+# Install dependencies (will be overridden by volume mount in compose)
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Source code is mounted as volume for hot reload
+# Do not COPY source files here
+
+EXPOSE 3000
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
