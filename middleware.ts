@@ -1,10 +1,40 @@
-import { auth } from "@/auth"
+import NextAuth from "next-auth"
+import authConfig from "@/auth.config"
 import { NextResponse } from "next/server"
 import {
   publicRoutes,
   authRoutes,
   DEFAULT_LOGIN_REDIRECT,
 } from "@/lib/auth-routes"
+
+/**
+ * Edge-compatible Auth.js instance for middleware.
+ *
+ * Uses JWT session strategy (no database calls) to work in Edge Runtime.
+ * The full auth configuration with database adapter is in auth.ts.
+ *
+ * @see https://authjs.dev/guides/edge-compatibility
+ */
+const { auth } = NextAuth({
+  ...authConfig,
+  session: { strategy: "jwt" },
+  callbacks: {
+    // JWT callback to include user ID in token
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    // Session callback to include user ID from JWT token
+    session({ session, token }) {
+      if (token.id) {
+        session.user.id = token.id as string
+      }
+      return session
+    },
+  },
+})
 
 export default auth((req) => {
   const { nextUrl } = req

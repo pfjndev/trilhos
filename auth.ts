@@ -1,7 +1,5 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import Google from "next-auth/providers/google"
-import GitHub from "next-auth/providers/github"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
@@ -14,8 +12,23 @@ import {
 } from "@/app/db/schema"
 import { verifyPassword } from "@/lib/password"
 import { loginSchema } from "@/lib/validations/auth"
+import authConfig from "./auth.config"
 
+/**
+ * Full Auth.js configuration with Node.js-specific features.
+ *
+ * This file extends the edge-compatible auth.config.ts with:
+ * - DrizzleAdapter for database sessions
+ * - Credentials provider (uses bcrypt for password verification)
+ * - Database session strategy
+ *
+ * This configuration is used by API routes and Server Actions (Node.js runtime).
+ * The middleware uses auth.config.ts directly for Edge Runtime compatibility.
+ *
+ * @see https://authjs.dev/guides/edge-compatibility
+ */
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: DrizzleAdapter(db, {
     usersTable,
     accountsTable,
@@ -26,10 +39,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "database",
   },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
   callbacks: {
     session({ session, user }) {
       // Add user ID to session for easy access
@@ -38,6 +47,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   providers: [
+    // Include OAuth providers from edge-compatible config
+    ...authConfig.providers,
+    // Credentials provider requires Node.js runtime (bcrypt)
     Credentials({
       name: "credentials",
       credentials: {
@@ -78,8 +90,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       },
     }),
-    // OAuth providers - uses AUTH_GOOGLE_ID/SECRET and AUTH_GITHUB_ID/SECRET env vars
-    Google,
-    GitHub,
   ],
 })
