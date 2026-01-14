@@ -3,6 +3,7 @@ import authConfig from "@/auth.config"
 import { NextResponse } from "next/server"
 import {
   publicRoutes,
+  publicApiRoutes,
   authRoutes,
   DEFAULT_LOGIN_REDIRECT,
 } from "@/lib/auth-routes"
@@ -42,7 +43,9 @@ export default auth((req) => {
 
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname)
   const isAuthRoute = authRoutes.includes(nextUrl.pathname)
-  const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth")
+  const isApiAuthRoute = publicApiRoutes.some((route) =>
+    nextUrl.pathname.startsWith(route)
+  )
 
   // Always allow API auth routes
   if (isApiAuthRoute) {

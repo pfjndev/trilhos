@@ -61,6 +61,7 @@ export function RegisterForm() {
       router.refresh()
     } else {
       // Registration succeeded but login failed - redirect to login page
+      setIsLoading(false)
       router.push("/login?registered=true")
     }
   }

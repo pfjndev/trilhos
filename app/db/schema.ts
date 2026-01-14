@@ -10,14 +10,12 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core"
+import type { AdapterAccountType } from "next-auth/adapters"
 import type { LocationPoint } from "@/types/location-point"
 
 // ============================================================================
 // Auth.js Tables (required for authentication)
 // ============================================================================
-
-// OAuth account type from Auth.js (defined locally to avoid circular dependency)
-type AdapterAccountType = "oauth" | "oidc" | "email" | "webauthn"
 
 export const usersTable = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),

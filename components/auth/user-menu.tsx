@@ -1,4 +1,5 @@
-import { auth, signOut } from "@/auth"
+import { auth } from "@/auth"
+import { logOut } from "@/app/actions/auth"
 import Link from "next/link"
 import { LogOut, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -40,19 +41,17 @@ export async function UserMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{session.user.name}</p>
+            <p className="text-sm font-medium">
+              {session.user.name || session.user.email}
+            </p>
             <p className="text-xs text-muted-foreground truncate">
               {session.user.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <form
-          action={async () => {
-            "use server"
-            await signOut({ redirectTo: "/login" })
-          }}
-        >
+        <form action={logOut}>
+          <input type="hidden" name="redirectTo" value="/login" />
           <DropdownMenuItem asChild>
             <button type="submit" className="w-full cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />
