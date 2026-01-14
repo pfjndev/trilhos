@@ -1,10 +1,14 @@
 # Multi-stage build for Next.js app
-FROM node:25-alpine AS base
+FROM alpine:3.21 AS base
 WORKDIR /app
 
 # Install production deps separately for a slimmer runtime image
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
+
+# Auto-update npm to latest version
+RUN npm install -g npm
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
