@@ -1,14 +1,9 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { LocationPoint } from "@/components/location-tracker"
+import type { LocationDataPanelProps } from "@/types/location-point"
 import { Navigation, Gauge, Mountain, Target, Clock, Route, Compass } from "lucide-react"
-
-interface LocationDataPanelProps {
-  currentPosition: LocationPoint | null
-  route: LocationPoint[]
-  isTracking: boolean
-}
+import { calculateTotalDistance, calculateDuration, formatDistance, formatDuration } from "@/lib/geo-utils"
 
 function formatCoordinate(value: number, type: "lat" | "lng"): string {
   const direction = type === "lat" ? (value >= 0 ? "N" : "S") : value >= 0 ? "E" : "W"
@@ -27,31 +22,9 @@ function formatHeading(heading: number | null): string {
   return `${heading.toFixed(1)}° (${directions[index]})`
 }
 
-function calculateTotalDistance(route: LocationPoint[]): number {
-  if (route.length < 2) return 0
-  let total = 0
-  for (let i = 1; i < route.length; i++) {
-    total += haversineDistance(route[i - 1].latitude, route[i - 1].longitude, route[i].latitude, route[i].longitude)
-  }
-  return total
-}
-
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371e3
-  const φ1 = (lat1 * Math.PI) / 180
-  const φ2 = (lat2 * Math.PI) / 180
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180
-
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-  return R * c
-}
-
 export function LocationDataPanel({ currentPosition, route, isTracking }: LocationDataPanelProps) {
   const totalDistance = calculateTotalDistance(route)
-  const duration = route.length > 1 ? route[route.length - 1].timestamp - route[0].timestamp : 0
+  const duration = calculateDuration(route)
 
   const dataItems = [
     {
@@ -134,13 +107,13 @@ export function LocationDataPanel({ currentPosition, route, isTracking }: Locati
             </div>
             <div className="text-center p-4 rounded-lg bg-muted/50">
               <p className="text-2xl font-bold text-foreground">
-                {totalDistance < 1000 ? `${totalDistance.toFixed(0)}m` : `${(totalDistance / 1000).toFixed(2)}km`}
+                {formatDistance(totalDistance)}
               </p>
               <p className="text-sm text-muted-foreground">Distance</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-muted/50">
               <p className="text-2xl font-bold text-foreground">
-                {Math.floor(duration / 60000)}:{String(Math.floor((duration % 60000) / 1000)).padStart(2, "0")}
+                {formatDuration(duration)}
               </p>
               <p className="text-sm text-muted-foreground">Duration</p>
             </div>
