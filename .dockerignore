@@ -8,5 +8,4 @@ coverage
 *.log
 .DS_Store
 .env*
-nginx/ssl
-agents.md
+AGENTS.md

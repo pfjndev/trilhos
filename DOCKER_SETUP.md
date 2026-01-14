@@ -1,95 +1,213 @@
-# Docker HTTPS Setup for Geolocation Testing
+# Docker Setup
 
-## Overview
-
-This setup enables testing the Geolocation API on mobile devices by providing HTTPS access through nginx reverse proxy on the `trilhos-docker-network`.
-
-## Architecture
-
-```text
-[Mobile Device] --> HTTPS:443 --> [nginx:alpine] --> HTTP:3000 --> [Next.js App]
-                                        |
-                                  trilhos-docker-network
-```
-
-## Components
-
-### 1. nginx (Reverse Proxy)
-
-- **Image**: `nginx:alpine`
-- **Ports**: 80 (HTTP redirect), 443 (HTTPS)
-- **Config**: [nginx/nginx.conf](nginx/nginx.conf)
-  - TLS 1.2/1.3 support
-  - Security headers (HSTS, X-Frame-Options, etc.)
-  - Proxies to internal `web:3000` service
-  - Auto-redirects HTTP to HTTPS
-
-### 2. Next.js Application
-
-- **Image**: Built from [Dockerfile](Dockerfile)
-- **Internal Port**: 3000 (not exposed to host)
-- **Network**: `trilhos-docker-network`
-- **Healthcheck**: Node.js HTTP request to [http://localhost:3000](http://localhost:3000)
-
-### 3. SSL Certificates
-
-- **Location**: `nginx/ssl/` (git-ignored)
-- **Type**: Self-signed (development only)
-- **Generation**: Run `./nginx/generate-ssl.sh`
-- **Validity**: 365 days
-- **SANs**: localhost, 127.0.0.1, common private IP ranges
+This project uses Docker with Caddy for HTTPS reverse proxy. Development and production environments are fully separated.
 
 ## Quick Start
 
-1. **Generate SSL certificates** (first time only):
-
-   ```bash
-   ./nginx/generate-ssl.sh
-   ```
-
-2. **Start services**:
-
-   ```bash
-   docker compose up --build
-   ```
-
-3. **Access from phone**:
-
-   - Find Mac IP: `ipconfig getifaddr en0`
-   - Navigate to: `https://<your-ip>`
-   - Accept certificate warning
-
-## Development Mode
-
-For hot-reload during development:
+### Development (with hot reload)
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-This mounts your source code and runs `next dev` with file watching enabled.
+Access at: `https://localhost`
 
-## Security Notes
+### Production
 
-- **Self-signed certificates** will trigger browser warnings
-- Users must manually accept the certificate to enable geolocation
-- For production, replace with valid certificates (Let's Encrypt, etc.)
-- Current nginx config uses strong ciphers and modern TLS protocols
+```bash
+docker compose up --build
+```
+
+## Architecture
+
+### Development
+
+```text
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│     caddy       │──▶│       web       │   │    database     │
+│   (HTTPS:443)   │   │  (Next.js dev)  │   │  (PostgreSQL)   │
+│  Local TLS CA   │   │  Hot reload ✓   │   │                 │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
+                        trilhos-dev-network
+```
+
+### Production
+
+```text
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│     caddy       │──▶│       web       │   │    database     │
+│   (HTTPS:443)   │   │ (Next.js prod)  │   │  (PostgreSQL)   │
+│  Let's Encrypt  │   │  Optimized ✓    │   │                 │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
+                       trilhos-docker-network
+```
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+# Database
+DB_HOST=database
+DB_PORT=5432
+DB_NAME=trilhos
+DB_USER=trilhos
+DB_PASSWORD=your-secure-password
+
+# Production only
+DOMAIN=yourdomain.com
+```
+
+## Development Details
+
+### Hot Reload
+
+The development setup mounts your source code as a volume, enabling hot reload:
+
+- Source changes are detected automatically via `WATCHPACK_POLLING`
+- No rebuild required for code changes
+- Only rebuild when dependencies change: `docker compose -f docker-compose.dev.yml up --build`
+
+### HTTPS with Self-Signed Certificates
+
+Caddy automatically generates self-signed certificates using its internal CA. This enables:
+
+- Geolocation API testing (requires HTTPS)
+- Service worker development
+- Secure cookie testing
+
+The first time you access `https://localhost`, your browser will show a certificate warning. Accept it to proceed.
+
+## Mobile Device Testing
+
+To test on mobile devices connected to your local network:
+
+### 1. Find Your Mac's IP Address
+
+```bash
+ipconfig getifaddr en0
+```
+
+### 2. Access From Mobile
+
+Navigate to `https://<your-mac-ip>` on your mobile device.
+
+### 3. Trust the Certificate
+
+Since Caddy uses a local CA, you need to trust it on your mobile device:
+
+#### Export the Root CA Certificate
+
+```bash
+docker compose -f docker-compose.dev.yml cp \
+    caddy:/data/caddy/pki/authorities/local/root.crt \
+    ./caddy-root.crt
+```
+
+#### Install on iOS
+
+1. AirDrop or email the `caddy-root.crt` file to your device
+2. Open the file and follow prompts to install the profile
+3. Go to Settings > General > About > Certificate Trust Settings
+4. Enable full trust for the Caddy root certificate
+
+#### Install on Android
+
+1. Transfer `caddy-root.crt` to your device
+2. Go to Settings > Security > Install from storage
+3. Select the certificate file
+4. Name it "Caddy Local" and confirm
+
+## Production Details
+
+### Automatic HTTPS
+
+In production, Caddy automatically:
+
+- Obtains Let's Encrypt certificates
+- Handles certificate renewals
+- Redirects HTTP to HTTPS
+
+Set the `DOMAIN` environment variable to your domain:
+
+```env
+DOMAIN=yourdomain.com
+```
+
+### DNS Requirements
+
+Ensure your domain's DNS records point to your server before starting:
+
+```bash
+# Verify DNS
+dig +short yourdomain.com
+```
+
+### Ports
+
+Ensure ports 80 and 443 are open and forwarded to your server.
+
+## Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `docker compose -f docker-compose.dev.yml up` | Start development |
+| `docker compose -f docker-compose.dev.yml up --build` | Rebuild and start dev |
+| `docker compose -f docker-compose.dev.yml down` | Stop development |
+| `docker compose -f docker-compose.dev.yml logs -f web` | View Next.js logs |
+| `docker compose up` | Start production |
+| `docker compose up --build` | Rebuild and start prod |
+| `docker compose down` | Stop production |
+| `docker compose logs -f caddy` | View Caddy logs |
 
 ## Troubleshooting
 
-### Geolocation still not working?
+### Hot Reload Not Working
 
-- Ensure you're using HTTPS (not HTTP)
-- Accept the certificate warning in your browser
-- Check browser console for errors
+1. Ensure `WATCHPACK_POLLING` is set (already configured in compose file)
+2. Check that volumes are mounted correctly:
+   ```bash
+   docker compose -f docker-compose.dev.yml exec web ls -la /app
+   ```
 
-### Certificate issues?
+### Certificate Issues
 
-- Regenerate: `rm -rf nginx/ssl && ./nginx/generate-ssl.sh`
-- Ensure the IP you're accessing is covered by SANs in the cert
+Regenerate Caddy's certificates by removing its data volume:
 
-### Container issues?
+```bash
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up
+```
 
-- Check logs: `docker compose logs nginx` or `docker compose logs web`
-- Verify network: `docker network inspect trilhos-docker-network`
+### Database Connection Issues
+
+Verify the database is running:
+
+```bash
+docker compose -f docker-compose.dev.yml ps database
+docker compose -f docker-compose.dev.yml logs database
+```
+
+### Port Conflicts
+
+If ports 80 or 443 are in use:
+
+```bash
+# Check what's using the ports
+lsof -i :80
+lsof -i :443
+
+# Stop conflicting services or change ports in compose file
+```
+
+## File Structure
+
+```
+├── docker-compose.yml        # Production configuration
+├── docker-compose.dev.yml    # Development configuration (standalone)
+├── Dockerfile                # Production multi-stage build
+├── Dockerfile.dev            # Development with hot reload
+└── caddy/
+    ├── Caddyfile             # Production Caddy config
+    └── Caddyfile.dev         # Development Caddy config
+```
