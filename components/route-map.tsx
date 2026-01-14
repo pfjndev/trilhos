@@ -1,13 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import type { LocationPoint } from "@/components/location-tracker"
-
-interface RouteMapProps {
-  route: LocationPoint[]
-  currentPosition: LocationPoint | null
-  isTracking: boolean
-}
+import type { RouteMapProps } from "@/types/route"
 
 export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -101,7 +95,7 @@ export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) 
 
   if (!isLoaded) {
     return (
-      <div className="h-100 rounded-lg bg-muted flex items-center justify-center">
+      <div className="h-96 rounded-lg bg-muted flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2" />
           <p className="text-muted-foreground">Loading map...</p>
@@ -110,5 +104,5 @@ export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) 
     )
   }
 
-  return <div ref={mapContainerRef} className="h-100 rounded-lg overflow-hidden border border-border" />
+  return <div ref={mapContainerRef} className="relative h-96 rounded-lg overflow-hidden border border-border" />
 }
