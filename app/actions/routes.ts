@@ -77,11 +77,18 @@ export async function updateRoutePoints(
   try {
     const userId = await getCurrentUserId()
 
-    // Build where clause - if user is authenticated, verify ownership
-    const whereClause = userId
-      ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
-      : eq(routesTable.id, routeId)
+    // Require authentication for route updates and verify ownership
+    if (!userId) {
+      return {
+        success: false,
+        error: "Authentication required to update route points",
+      }
+    }
 
+    const whereClause = and(
+      eq(routesTable.id, routeId),
+      eq(routesTable.userId, userId)
+    )
     await db
       .update(routesTable)
       .set({
