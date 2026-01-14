@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 import { usersTable } from "@/app/db/schema"
 import { hashPassword } from "@/lib/password"
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth"
-import { signIn } from "@/auth"
+import { signIn, signOut } from "@/auth"
 import { AuthError } from "next-auth"
 
 export interface AuthResult {
@@ -87,6 +87,19 @@ export async function loginWithCredentials(
           return { success: false, error: "An error occurred during sign in" }
       }
     }
+    throw error
+  }
+}
+
+/**
+ * Sign out the current user
+ */
+export async function logOut(formData: FormData): Promise<void> {
+  try {
+    const redirectTo = (formData.get("redirectTo") ?? "/login").toString()
+    await signOut({ redirectTo })
+  } catch (error) {
+    console.error("Sign out error:", error)
     throw error
   }
 }

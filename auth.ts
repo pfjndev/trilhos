@@ -12,8 +12,23 @@ import {
 } from "@/app/db/schema"
 import { verifyPassword } from "@/lib/password"
 import { loginSchema } from "@/lib/validations/auth"
+import authConfig from "./auth.config"
 
+/**
+ * Full Auth.js configuration with Node.js-specific features.
+ *
+ * This file extends the edge-compatible auth.config.ts with:
+ * - DrizzleAdapter for database sessions
+ * - Credentials provider (uses bcrypt for password verification)
+ * - Database session strategy
+ *
+ * This configuration is used by API routes and Server Actions (Node.js runtime).
+ * The middleware uses auth.config.ts directly for Edge Runtime compatibility.
+ *
+ * @see https://authjs.dev/guides/edge-compatibility
+ */
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: DrizzleAdapter(db, {
     usersTable,
     accountsTable,
@@ -23,10 +38,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   }),
   session: {
     strategy: "database",
-  },
-  pages: {
-    signIn: "/login",
-    error: "/login",
+    // Seconds - How long until an idle session expires and is no longer valid
+    maxAge: 24 * 60 * 60, // 1 day
+    // Seconds - Throttle how frequently to write to database to extend a session
+    updateAge: 60 * 60, // 1 hour
   },
   callbacks: {
     session({ session, user }) {
@@ -36,6 +51,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   providers: [
+    // Include OAuth providers from edge-compatible config
+    ...authConfig.providers,
+    // Credentials provider requires Node.js runtime (bcrypt)
     Credentials({
       name: "credentials",
       credentials: {
@@ -76,6 +94,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       },
     }),
-    // OAuth providers will be added in #48
   ],
 })
