@@ -2,10 +2,11 @@
 
 import { db } from "@/lib/db"
 import { routesTable } from "@/app/db/schema"
-import { eq } from "drizzle-orm"
+import { eq, and } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import type { LocationPoint } from "@/types/location-point"
 import { generateRouteName, calculateTotalDistance, calculateDuration } from "@/lib/geo-utils"
+import { auth } from "@/auth"
 
 export interface CreateRouteResult {
   success: boolean
@@ -19,17 +20,28 @@ export interface UpdateRouteResult {
 }
 
 /**
+ * Get the current authenticated user's ID
+ * Returns null if not authenticated (routes can still be created anonymously)
+ */
+async function getCurrentUserId(): Promise<string | null> {
+  const session = await auth()
+  return session?.user?.id ?? null
+}
+
+/**
  * Create a new route when tracking starts
  */
 export async function createRoute(
   startPoint: LocationPoint
 ): Promise<CreateRouteResult> {
   try {
+    const userId = await getCurrentUserId()
     const name = await generateRouteName(startPoint)
 
     const result = await db
       .insert(routesTable)
       .values({
+        userId,
         name,
         points: [startPoint],
         totalDistance: 0,
@@ -63,6 +75,13 @@ export async function updateRoutePoints(
   duration: number
 ): Promise<UpdateRouteResult> {
   try {
+    const userId = await getCurrentUserId()
+
+    // Build where clause - if user is authenticated, verify ownership
+    const whereClause = userId
+      ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
+      : eq(routesTable.id, routeId)
+
     await db
       .update(routesTable)
       .set({
@@ -71,7 +90,7 @@ export async function updateRoutePoints(
         duration,
         updatedAt: new Date(),
       })
-      .where(eq(routesTable.id, routeId))
+      .where(whereClause)
 
     return { success: true }
   } catch (error) {
@@ -95,6 +114,12 @@ export async function finalizeRoute(
   duration: number
 ): Promise<UpdateRouteResult> {
   try {
+    const userId = await getCurrentUserId()
+
+    const whereClause = userId
+      ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
+      : eq(routesTable.id, routeId)
+
     await db
       .update(routesTable)
       .set({
@@ -105,7 +130,7 @@ export async function finalizeRoute(
         status: "completed",
         updatedAt: new Date(),
       })
-      .where(eq(routesTable.id, routeId))
+      .where(whereClause)
 
     revalidatePath("/")
 
@@ -125,13 +150,19 @@ export async function finalizeRoute(
  */
 export async function abandonRoute(routeId: number): Promise<UpdateRouteResult> {
   try {
+    const userId = await getCurrentUserId()
+
+    const whereClause = userId
+      ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
+      : eq(routesTable.id, routeId)
+
     await db
       .update(routesTable)
       .set({
         status: "abandoned",
         updatedAt: new Date(),
       })
-      .where(eq(routesTable.id, routeId))
+      .where(whereClause)
 
     revalidatePath("/")
 
@@ -156,12 +187,18 @@ export async function syncPendingRoute(
   startedAt: number
 ): Promise<CreateRouteResult> {
   try {
+    const userId = await getCurrentUserId()
+    
     // Use shared utility functions instead of inline calculation
     const totalDistance = calculateTotalDistance(points)
     const duration = calculateDuration(points)
 
     if (routeId) {
       // Update existing route
+      const whereClause = userId
+        ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
+        : eq(routesTable.id, routeId)
+
       await db
         .update(routesTable)
         .set({
@@ -170,7 +207,7 @@ export async function syncPendingRoute(
           duration,
           updatedAt: new Date(),
         })
-        .where(eq(routesTable.id, routeId))
+        .where(whereClause)
 
       revalidatePath("/")
       return { success: true, routeId }
@@ -179,6 +216,7 @@ export async function syncPendingRoute(
       const result = await db
         .insert(routesTable)
         .values({
+          userId,
           name,
           points,
           totalDistance,

@@ -1,5 +1,6 @@
 import { MapPin } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserMenu } from "@/components/auth"
 
 export function Header() {
   return (
@@ -16,7 +17,10 @@ export function Header() {
             </p>
           </div>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <UserMenu />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )
