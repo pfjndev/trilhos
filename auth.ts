@@ -1,5 +1,7 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
+import Google from "next-auth/providers/google"
+import GitHub from "next-auth/providers/github"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
@@ -76,6 +78,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       },
     }),
-    // OAuth providers will be added in #48
+    // OAuth providers - uses AUTH_GOOGLE_ID/SECRET and AUTH_GITHUB_ID/SECRET env vars
+    Google,
+    GitHub,
   ],
 })
