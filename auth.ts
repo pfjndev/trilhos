@@ -1,5 +1,7 @@
 import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
+import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import {
   usersTable,
@@ -8,6 +10,8 @@ import {
   verificationTokensTable,
   authenticatorsTable,
 } from "@/app/db/schema"
+import { verifyPassword } from "@/lib/password"
+import { loginSchema } from "@/lib/validations/auth"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -22,8 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/login",
-    // signUp: "/register", // Auth.js doesn't have signUp page config
-    error: "/login", // Redirect auth errors to login page
+    error: "/login",
   },
   callbacks: {
     session({ session, user }) {
@@ -33,8 +36,46 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   providers: [
-    // Providers will be added in subsequent issues:
-    // - #45: Credentials provider (email/password)
-    // - #48: Google and GitHub OAuth providers
+    Credentials({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        // Validate credentials format
+        const validated = loginSchema.safeParse(credentials)
+        if (!validated.success) {
+          return null
+        }
+
+        const { email, password } = validated.data
+
+        // Find user by email
+        const user = await db.query.usersTable.findFirst({
+          where: eq(usersTable.email, email.toLowerCase()),
+        })
+
+        // User not found or no password (OAuth-only user)
+        if (!user || !user.passwordHash) {
+          return null
+        }
+
+        // Verify password
+        const isValid = await verifyPassword(password, user.passwordHash)
+        if (!isValid) {
+          return null
+        }
+
+        // Return user object (id must be string for Auth.js)
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        }
+      },
+    }),
+    // OAuth providers will be added in #48
   ],
 })
