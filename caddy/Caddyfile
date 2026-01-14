@@ -1,0 +1,4 @@
+# Production Caddyfile - Automatic HTTPS with Let's Encrypt
+{$DOMAIN:localhost} {
+	reverse_proxy web:3000
+}

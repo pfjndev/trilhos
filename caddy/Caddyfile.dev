@@ -1,0 +1,17 @@
+# Development Caddyfile - Local HTTPS with auto-generated certificates
+{
+	# Use Caddy's internal CA for local development
+	# This generates self-signed certificates automatically
+	local_certs
+}
+
+# Serve on localhost with HTTPS
+localhost {
+	reverse_proxy web:3000
+}
+
+# Also serve on any IP address for mobile device testing
+:443 {
+	tls internal
+	reverse_proxy web:3000
+}
