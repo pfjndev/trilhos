@@ -39,7 +39,7 @@ Generate a self-signed SSL certificate:
 - Production mode with HTTPS:
   - `docker compose up --build`
   - Access via [https://localhost](https://localhost) or https://LAN_IP from your phone
-  - Nginx proxies requests to the Next.js app on the `geoloc-docker-network`
+  - Nginx proxies requests to the Next.js app on the `trilhos-docker-network`
   
 - Dev mode with hot reload:
   - `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`
