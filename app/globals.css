@@ -123,3 +123,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Constrain Leaflet z-index to prevent map from overlapping modals/dialogs */
+.leaflet-container {
+  z-index: 0;
+  isolation: isolate;
+}
