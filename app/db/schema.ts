@@ -90,7 +90,7 @@ export const authenticatorsTable = pgTable(
 // ============================================================================
 
 // Route status constants
-export const ROUTE_STATUSES = ["active", "completed", "abandoned"] as const
+export const ROUTE_STATUSES = ["active", "completed"] as const
 export type RouteStatus = (typeof ROUTE_STATUSES)[number]
 
 export const routesTable = pgTable("routes", {

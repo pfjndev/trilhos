@@ -92,14 +92,8 @@ export async function loginWithCredentials(
 }
 
 /**
- * Sign out the current user
+ * Sign out the current user (used by local UserMenu component)
  */
-export async function logOut(formData: FormData): Promise<void> {
-  try {
-    const redirectTo = (formData.get("redirectTo") ?? "/login").toString()
-    await signOut({ redirectTo })
-  } catch (error) {
-    console.error("Sign out error:", error)
-    throw error
-  }
+export async function logoutUser(): Promise<void> {
+  await signOut({ redirectTo: "/login" })
 }

@@ -5,7 +5,7 @@ import { routesTable } from "@/app/db/schema"
 import { eq, and } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import type { LocationPoint } from "@/types/location-point"
-import { generateRouteName, calculateTotalDistance, calculateDuration } from "@/lib/geo-utils"
+import { generateRouteName } from "@/lib/geo-utils"
 import { auth } from "@/auth"
 
 export interface CreateRouteResult {
@@ -20,8 +20,8 @@ export interface UpdateRouteResult {
 }
 
 /**
- * Get the current authenticated user's ID
- * Returns null if not authenticated (routes can still be created anonymously)
+ * Helper to get current authenticated user ID
+ * Returns null if not authenticated
  */
 async function getCurrentUserId(): Promise<string | null> {
   const session = await auth()
@@ -29,13 +29,30 @@ async function getCurrentUserId(): Promise<string | null> {
 }
 
 /**
+ * Helper to verify route ownership
+ * Returns true if the user owns the route
+ */
+async function verifyRouteOwnership(routeId: number, userId: string): Promise<boolean> {
+  const route = await db.query.routesTable.findFirst({
+    where: eq(routesTable.id, routeId),
+    columns: { userId: true },
+  })
+  return route?.userId === userId
+}
+
+/**
  * Create a new route when tracking starts
+ * Requires authentication - route is associated with current user
  */
 export async function createRoute(
   startPoint: LocationPoint
 ): Promise<CreateRouteResult> {
   try {
     const userId = await getCurrentUserId()
+    if (!userId) {
+      return { success: false, error: "Not authenticated" }
+    }
+
     const name = await generateRouteName(startPoint)
 
     const result = await db
@@ -66,52 +83,8 @@ export async function createRoute(
 }
 
 /**
- * Update route points during tracking (periodic auto-save)
- */
-export async function updateRoutePoints(
-  routeId: number,
-  points: LocationPoint[],
-  totalDistance: number,
-  duration: number
-): Promise<UpdateRouteResult> {
-  try {
-    const userId = await getCurrentUserId()
-
-    // Require authentication for route updates and verify ownership
-    if (!userId) {
-      return {
-        success: false,
-        error: "Authentication required to update route points",
-      }
-    }
-
-    const whereClause = and(
-      eq(routesTable.id, routeId),
-      eq(routesTable.userId, userId)
-    )
-    await db
-      .update(routesTable)
-      .set({
-        points,
-        totalDistance,
-        duration,
-        updatedAt: new Date(),
-      })
-      .where(whereClause)
-
-    return { success: true }
-  } catch (error) {
-    console.error("Failed to update route points:", error)
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to update route points",
-    }
-  }
-}
-
-/**
  * Finalize a route when tracking stops
+ * Only the route owner can finalize
  */
 export async function finalizeRoute(
   routeId: number,
@@ -122,10 +95,15 @@ export async function finalizeRoute(
 ): Promise<UpdateRouteResult> {
   try {
     const userId = await getCurrentUserId()
+    if (!userId) {
+      return { success: false, error: "Not authenticated" }
+    }
 
-    const whereClause = userId
-      ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
-      : eq(routesTable.id, routeId)
+    // Verify ownership
+    const isOwner = await verifyRouteOwnership(routeId, userId)
+    if (!isOwner) {
+      return { success: false, error: "Not authorized to finalize this route" }
+    }
 
     await db
       .update(routesTable)
@@ -137,9 +115,11 @@ export async function finalizeRoute(
         status: "completed",
         updatedAt: new Date(),
       })
-      .where(whereClause)
+      .where(and(eq(routesTable.id, routeId), eq(routesTable.userId, userId)))
 
     revalidatePath("/")
+    revalidatePath("/history")
+    revalidatePath("/activity")
 
     return { success: true }
   } catch (error) {
@@ -153,95 +133,86 @@ export async function finalizeRoute(
 }
 
 /**
- * Abandon a route (e.g., when user chooses not to resume)
+ * Update route name (rename)
+ * Only the route owner can rename
  */
-export async function abandonRoute(routeId: number): Promise<UpdateRouteResult> {
+export async function updateRouteName(
+  routeId: number,
+  name: string
+): Promise<UpdateRouteResult> {
   try {
     const userId = await getCurrentUserId()
+    if (!userId) {
+      return { success: false, error: "Not authenticated" }
+    }
 
-    const whereClause = userId
-      ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
-      : eq(routesTable.id, routeId)
+    // Validate name
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return { success: false, error: "Route name cannot be empty" }
+    }
+    if (trimmedName.length > 255) {
+      return { success: false, error: "Route name is too long" }
+    }
+
+    // Verify ownership
+    const isOwner = await verifyRouteOwnership(routeId, userId)
+    if (!isOwner) {
+      return { success: false, error: "Not authorized to rename this route" }
+    }
 
     await db
       .update(routesTable)
       .set({
-        status: "abandoned",
+        name: trimmedName,
         updatedAt: new Date(),
       })
-      .where(whereClause)
+      .where(and(eq(routesTable.id, routeId), eq(routesTable.userId, userId)))
 
-    revalidatePath("/")
+    revalidatePath(`/routes/${routeId}`)
+    revalidatePath("/history")
+    revalidatePath("/activity")
 
     return { success: true }
   } catch (error) {
-    console.error("Failed to abandon route:", error)
+    console.error("Failed to rename route:", error)
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to abandon route",
+      error: error instanceof Error ? error.message : "Failed to rename route",
     }
   }
 }
 
 /**
- * Sync a pending route from localStorage to the database
+ * Delete a route
+ * Only the route owner can delete
  */
-export async function syncPendingRoute(
-  routeId: number | null,
-  points: LocationPoint[],
-  name: string,
-  startedAt: number
-): Promise<CreateRouteResult> {
+export async function deleteRoute(routeId: number): Promise<UpdateRouteResult> {
   try {
     const userId = await getCurrentUserId()
-    
-    // Use shared utility functions instead of inline calculation
-    const totalDistance = calculateTotalDistance(points)
-    const duration = calculateDuration(points)
-
-    if (routeId) {
-      // Update existing route
-      const whereClause = userId
-        ? and(eq(routesTable.id, routeId), eq(routesTable.userId, userId))
-        : eq(routesTable.id, routeId)
-
-      await db
-        .update(routesTable)
-        .set({
-          points,
-          totalDistance,
-          duration,
-          updatedAt: new Date(),
-        })
-        .where(whereClause)
-
-      revalidatePath("/")
-      return { success: true, routeId }
-    } else {
-      // Create new route from pending data
-      const result = await db
-        .insert(routesTable)
-        .values({
-          userId,
-          name,
-          points,
-          totalDistance,
-          duration,
-          status: "active",
-          createdAt: new Date(startedAt),
-        })
-        .returning({ id: routesTable.id })
-
-      revalidatePath("/")
-      return { success: true, routeId: result[0].id }
+    if (!userId) {
+      return { success: false, error: "Not authenticated" }
     }
+
+    // Verify ownership
+    const isOwner = await verifyRouteOwnership(routeId, userId)
+    if (!isOwner) {
+      return { success: false, error: "Not authorized to delete this route" }
+    }
+
+    await db
+      .delete(routesTable)
+      .where(and(eq(routesTable.id, routeId), eq(routesTable.userId, userId)))
+
+    revalidatePath("/history")
+    revalidatePath("/activity")
+
+    return { success: true }
   } catch (error) {
-    console.error("Failed to sync pending route:", error)
+    console.error("Failed to delete route:", error)
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to sync pending route",
+      error: error instanceof Error ? error.message : "Failed to delete route",
     }
   }
 }
