@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card"
 import { registerUser, loginWithCredentials } from "@/app/actions/auth"
 import { SocialButtons } from "./social-buttons"
+import { registerSchema } from "@/lib/validations/auth"
 
 interface FormErrors {
   name?: string
@@ -42,6 +43,21 @@ export function RegisterForm() {
       email: formData.get("email") as string,
       password: formData.get("password") as string,
       confirmPassword: formData.get("confirmPassword") as string,
+    }
+
+    // Client-side validation
+    const validation = registerSchema.safeParse(data)
+    if (!validation.success) {
+      const fieldErrors: FormErrors = {}
+      for (const issue of validation.error.issues) {
+        const field = issue.path[0] as keyof FormErrors
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = issue.message
+        }
+      }
+      setErrors(fieldErrors)
+      setIsLoading(false)
+      return
     }
 
     // Register the user
@@ -106,7 +122,11 @@ export function RegisterForm() {
               required
               autoComplete="name"
               disabled={isLoading}
+              aria-invalid={!!errors.name}
             />
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -118,7 +138,11 @@ export function RegisterForm() {
               required
               autoComplete="email"
               disabled={isLoading}
+              aria-invalid={!!errors.email}
             />
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
@@ -130,7 +154,11 @@ export function RegisterForm() {
               required
               autoComplete="new-password"
               disabled={isLoading}
+              aria-invalid={!!errors.password}
             />
+            {errors.password && (
+              <p className="text-xs text-destructive">{errors.password}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               At least 8 characters with uppercase, lowercase, and number
             </p>
@@ -145,7 +173,11 @@ export function RegisterForm() {
               required
               autoComplete="new-password"
               disabled={isLoading}
+              aria-invalid={!!errors.confirmPassword}
             />
+            {errors.confirmPassword && (
+              <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">

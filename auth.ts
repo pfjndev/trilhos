@@ -20,10 +20,10 @@ import authConfig from "./auth.config"
  * This file extends the edge-compatible auth.config.ts with:
  * - DrizzleAdapter for database sessions
  * - Credentials provider (uses bcrypt for password verification)
- * - Database session strategy
+ * - JWT session strategy (required for credentials provider)
  *
  * This configuration is used by API routes and Server Actions (Node.js runtime).
- * The middleware uses auth.config.ts directly for Edge Runtime compatibility.
+ * The proxy.ts uses this directly since Next.js 16 proxies run in Node.js context.
  *
  * @see https://authjs.dev/guides/edge-compatibility
  */
@@ -37,16 +37,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     authenticatorsTable,
   }),
   session: {
-    strategy: "database",
-    // Seconds - How long until an idle session expires and is no longer valid
-    maxAge: 24 * 60 * 60, // 1 day
-    // Seconds - Throttle how frequently to write to database to extend a session
-    updateAge: 60 * 60, // 1 hour
+    // JWT strategy is required for credentials provider
+    // The adapter still stores users in the database
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
   },
   callbacks: {
-    session({ session, user }) {
-      // Add user ID to session for easy access
-      session.user.id = user.id
+    jwt({ token, user }) {
+      // Persist user ID in the JWT token on sign-in
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    session({ session, token }) {
+      // Add user ID to session from JWT token
+      session.user.id = token.id as string
       return session
     },
   },

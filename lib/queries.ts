@@ -1,25 +1,12 @@
 import { cache } from "react"
 import { db } from "@/lib/db"
 import { routesTable, type Route } from "@/app/db/schema"
-import { eq, desc } from "drizzle-orm"
-
-/**
- * Get the currently active route (if any)
- * This is cached per request to avoid duplicate queries
- */
-export const getActiveRoute = cache(async (): Promise<Route | null> => {
-  const routes = await db
-    .select()
-    .from(routesTable)
-    .where(eq(routesTable.status, "active"))
-    .orderBy(desc(routesTable.createdAt))
-    .limit(1)
-
-  return routes[0] ?? null
-})
+import { eq, desc, and } from "drizzle-orm"
+import { auth } from "@/auth"
 
 /**
  * Get a route by ID
+ * This is public - anyone can view any completed route
  */
 export const getRouteById = cache(async (id: number): Promise<Route | null> => {
   const routes = await db
@@ -32,14 +19,24 @@ export const getRouteById = cache(async (id: number): Promise<Route | null> => {
 })
 
 /**
- * Get all completed routes for the user (for route history)
- * Currently shows all completed routes since there's no authentication
+ * Get all completed routes for the authenticated user (for route history)
+ * Returns empty array if not authenticated
  */
 export const getCompletedRoutes = cache(async (): Promise<Route[]> => {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return []
+  }
+
   return db
     .select()
     .from(routesTable)
-    .where(eq(routesTable.status, "completed"))
+    .where(
+      and(
+        eq(routesTable.status, "completed"),
+        eq(routesTable.userId, session.user.id)
+      )
+    )
     .orderBy(desc(routesTable.createdAt))
 })
 
@@ -54,9 +51,3 @@ export const getAllRoutes = cache(async (): Promise<Route[]> => {
     .where(eq(routesTable.status, "completed"))
     .orderBy(desc(routesTable.createdAt))
 })
-
-/**
- * Type alias for backward compatibility
- * @deprecated Use Route from schema instead
- */
-export type DbRoute = Route | null

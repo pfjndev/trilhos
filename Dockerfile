@@ -1,6 +1,7 @@
 # Multi-stage build for Next.js app
 FROM alpine:3.21 AS base
 WORKDIR /app
+RUN apk add --no-cache nodejs npm
 
 # Install production deps separately for a slimmer runtime image
 FROM base AS deps

@@ -17,28 +17,52 @@ import {
 } from "@/components/ui/card"
 import { loginWithCredentials } from "@/app/actions/auth"
 import { SocialButtons } from "./social-buttons"
+import { loginSchema } from "@/lib/validations/auth"
+
+interface FormErrors {
+  email?: string
+  password?: string
+  general?: string
+}
 
 export function LoginForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<FormErrors>({})
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
-    setError(null)
+    setErrors({})
 
     const formData = new FormData(event.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    const data = {
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+    }
 
-    const result = await loginWithCredentials(email, password)
+    // Client-side validation
+    const validation = loginSchema.safeParse(data)
+    if (!validation.success) {
+      const fieldErrors: FormErrors = {}
+      for (const issue of validation.error.issues) {
+        const field = issue.path[0] as keyof FormErrors
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = issue.message
+        }
+      }
+      setErrors(fieldErrors)
+      setIsLoading(false)
+      return
+    }
+
+    const result = await loginWithCredentials(data.email, data.password)
 
     if (result.success) {
       router.push("/")
       router.refresh()
     } else {
-      setError(result.error || "An error occurred")
+      setErrors({ general: result.error || "An error occurred" })
       setIsLoading(false)
     }
   }
@@ -53,9 +77,9 @@ export function LoginForm() {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          {error && (
+          {errors.general && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
+              {errors.general}
             </div>
           )}
 
@@ -83,7 +107,11 @@ export function LoginForm() {
               required
               autoComplete="email"
               disabled={isLoading}
+              aria-invalid={!!errors.email}
             />
+            {errors.email && (
+              <p className="text-xs text-destructive">{errors.email}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
@@ -95,7 +123,11 @@ export function LoginForm() {
               required
               autoComplete="current-password"
               disabled={isLoading}
+              aria-invalid={!!errors.password}
             />
+            {errors.password && (
+              <p className="text-xs text-destructive">{errors.password}</p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
