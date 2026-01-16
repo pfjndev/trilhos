@@ -1,8 +1,11 @@
 import { MapPin } from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { UserMenu } from "@/components/auth"
+import { ThemeToggle } from "@/components/theme"
+import { UserMenu } from "./user-menu"
+import { auth } from "@/auth"
 
-export function Header() {
+export async function Header() {
+  const session = await auth()
+
   return (
     <header className="w-full px-6 py-4 bg-card border-b shadow-sm">
       <div className="flex items-center justify-between">
@@ -18,7 +21,14 @@ export function Header() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <UserMenu />
+          {session?.user && (
+            <UserMenu
+              user={{
+                name: session.user.name,
+                email: session.user.email,
+              }}
+            />
+          )}
           <ThemeToggle />
         </div>
       </div>
