@@ -1,8 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Header } from "@/components/header"
-import { BottomNav } from "@/components/bottom-nav"
-import { ThemeProvider } from "@/components/theme-provider"
+import { Header, BottomNav } from "@/components/layout"
+import { ThemeProvider } from "@/components/theme"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 
