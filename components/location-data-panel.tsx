@@ -1,8 +1,9 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { RouteStatsGrid, type RouteStatItem } from "@/components/shared"
 import type { LocationDataPanelProps } from "@/types/location-point"
-import { Navigation, Gauge, Mountain, Target, Clock, Route, Compass } from "lucide-react"
+import { Navigation, Gauge, Mountain, Target, Clock, Route, Compass, MapPin } from "lucide-react"
 import { calculateTotalDistance, calculateDuration, formatDistance, formatDuration } from "@/lib/geo-utils"
 
 function formatCoordinate(value: number, type: "lat" | "lng"): string {
@@ -71,6 +72,12 @@ export function LocationDataPanel({ currentPosition, route, isTracking }: Locati
     },
   ]
 
+  const routeStats: RouteStatItem[] = [
+    { icon: MapPin, value: route.length, label: "Points" },
+    { icon: Route, value: formatDistance(totalDistance), label: "Distance" },
+    { icon: Clock, value: formatDuration(duration), label: "Duration" },
+  ]
+
   return (
     <div className="space-y-6">
       <Card>
@@ -100,24 +107,7 @@ export function LocationDataPanel({ currentPosition, route, isTracking }: Locati
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 rounded-lg bg-muted/50">
-              <p className="text-2xl font-bold text-foreground">{route.length}</p>
-              <p className="text-sm text-muted-foreground">Points</p>
-            </div>
-            <div className="text-center p-4 rounded-lg bg-muted/50">
-              <p className="text-2xl font-bold text-foreground">
-                {formatDistance(totalDistance)}
-              </p>
-              <p className="text-sm text-muted-foreground">Distance</p>
-            </div>
-            <div className="text-center p-4 rounded-lg bg-muted/50">
-              <p className="text-2xl font-bold text-foreground">
-                {formatDuration(duration)}
-              </p>
-              <p className="text-sm text-muted-foreground">Duration</p>
-            </div>
-          </div>
+          <RouteStatsGrid stats={routeStats} columns={3} />
           {!isTracking && route.length > 0 && (
             <p className="text-center text-sm text-muted-foreground mt-4">
               Route tracking stopped. Map shows complete route overview.
