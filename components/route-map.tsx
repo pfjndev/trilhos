@@ -1,56 +1,60 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import type { RouteMapProps } from "@/types/route"
+import { useEffect, useRef } from "react"
+import { useLeaflet } from "@/hooks/use-leaflet"
+import { MAP_CONFIG } from "@/lib/constants"
+import type { LocationPoint } from "@/types/location-point"
+import { cn } from "@/lib/utils"
 
-export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) {
+export interface RouteMapProps {
+  /** Route points to display */
+  points: LocationPoint[]
+  /** Current position marker (for live tracking mode) */
+  currentPosition?: LocationPoint | null
+  /** Whether actively tracking (affects map behavior) */
+  isTracking?: boolean
+  /** Show start/end markers (for static display mode) */
+  showEndpoints?: boolean
+  /** Height class (Tailwind) */
+  height?: string
+  /** Additional CSS classes */
+  className?: string
+}
+
+/**
+ * Unified map component for both live tracking and static route display
+ * Uses Leaflet with dynamic loading for SSR compatibility
+ */
+export function RouteMap({
+  points,
+  currentPosition,
+  isTracking = false,
+  showEndpoints = false,
+  height = "h-96",
+  className,
+}: RouteMapProps) {
+  const { L, isLoaded } = useLeaflet()
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const polylineRef = useRef<L.Polyline | null>(null)
-  const markerRef = useRef<L.CircleMarker | null>(null)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [L, setL] = useState<typeof import("leaflet") | null>(null)
+  const currentMarkerRef = useRef<L.CircleMarker | null>(null)
+  const endpointMarkersRef = useRef<L.CircleMarker[]>([])
 
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    let link = document.querySelector<HTMLLinkElement>(`link[rel="stylesheet"][href="${href}"]`)
-    let addedLink = false
-    if (!link) {
-      link = document.createElement("link")
-      link.rel = "stylesheet"
-      link.href = href
-      link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      link.crossOrigin = ""
-      document.head.appendChild(link)
-      addedLink = true
-    }
-    // Dynamically import leaflet only on client side
-    import("leaflet").then((leafletModule) => {
-      setL(leafletModule.default)
-      setIsLoaded(true)
-    })
-    return () => {
-      if (addedLink && link && document.head.contains(link)) {
-        // Concurrency issue, #TODO use ref instead for removal
-        //document.head.removeChild(link)
-      }
-    }
-  }, [])
-
+  // Initialize map
   useEffect(() => {
     if (!isLoaded || !L || !mapContainerRef.current || mapRef.current) return
 
     mapRef.current = L.map(mapContainerRef.current).setView([0, 0], 2)
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(mapRef.current)
 
     polylineRef.current = L.polyline([], {
-      color: "#3b82f6",
-      weight: 4,
+      color: MAP_CONFIG.ROUTE_COLOR,
+      weight: MAP_CONFIG.ROUTE_WEIGHT,
       opacity: 1,
     }).addTo(mapRef.current)
 
@@ -62,40 +66,90 @@ export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) 
     }
   }, [isLoaded, L])
 
+  // Update route polyline and markers
   useEffect(() => {
     if (!mapRef.current || !polylineRef.current || !L) return
 
-    const latLngs: [number, number][] = route.map((point) => [point.latitude, point.longitude])
+    const latLngs: [number, number][] = points.map((p) => [
+      p.latitude,
+      p.longitude,
+    ])
     polylineRef.current.setLatLngs(latLngs)
 
-    if (currentPosition) {
-      const position: [number, number] = [currentPosition.latitude, currentPosition.longitude]
+    // Clear old endpoint markers
+    endpointMarkersRef.current.forEach((marker) => marker.remove())
+    endpointMarkersRef.current = []
 
-      if (!markerRef.current) {
-        markerRef.current = L.circleMarker(position, {
-          radius: 10,
-          fillColor: "#3b82f6",
-          color: "#ffffff",
-          weight: 3,
+    // Live tracking mode: show current position marker
+    if (currentPosition) {
+      const position: [number, number] = [
+        currentPosition.latitude,
+        currentPosition.longitude,
+      ]
+
+      if (!currentMarkerRef.current) {
+        currentMarkerRef.current = L.circleMarker(position, {
+          radius: MAP_CONFIG.MARKER_RADIUS,
+          fillColor: MAP_CONFIG.MARKER_FILL_COLOR,
+          color: MAP_CONFIG.MARKER_BORDER_COLOR,
+          weight: MAP_CONFIG.MARKER_BORDER_WEIGHT,
           opacity: 1,
           fillOpacity: 1,
         }).addTo(mapRef.current)
       } else {
-        markerRef.current.setLatLng(position)
+        currentMarkerRef.current.setLatLng(position)
       }
 
       if (isTracking) {
-        mapRef.current.setView(position, route.length === 1 ? 17 : mapRef.current.getZoom())
-      } else if (route.length > 1) {
-        const bounds = L.latLngBounds(latLngs)
-        mapRef.current.fitBounds(bounds, { padding: [50, 50] })
+        mapRef.current.setView(
+          position,
+          points.length === 1 ? MAP_CONFIG.DEFAULT_ZOOM : mapRef.current.getZoom()
+        )
+      } else if (latLngs.length > 1) {
+        mapRef.current.fitBounds(L.latLngBounds(latLngs), {
+          padding: MAP_CONFIG.FIT_BOUNDS_PADDING,
+        })
       }
     }
-  }, [route, currentPosition, isTracking, L])
+
+    // Static mode: show start/end markers
+    if (showEndpoints && latLngs.length > 0) {
+      // Start marker (green)
+      const startMarker = L.circleMarker(latLngs[0], {
+        radius: 8,
+        fillColor: "#22c55e",
+        color: "#ffffff",
+        weight: 2,
+        fillOpacity: 1,
+      }).addTo(mapRef.current)
+      endpointMarkersRef.current.push(startMarker)
+
+      // End marker (red)
+      if (latLngs.length > 1) {
+        const endMarker = L.circleMarker(latLngs[latLngs.length - 1], {
+          radius: 8,
+          fillColor: "#ef4444",
+          color: "#ffffff",
+          weight: 2,
+          fillOpacity: 1,
+        }).addTo(mapRef.current)
+        endpointMarkersRef.current.push(endMarker)
+      }
+
+      // Fit bounds for static view
+      mapRef.current.fitBounds(L.latLngBounds(latLngs), { padding: [30, 30] })
+    }
+  }, [points, currentPosition, isTracking, showEndpoints, L])
 
   if (!isLoaded) {
     return (
-      <div className="h-96 rounded-lg bg-muted flex items-center justify-center">
+      <div
+        className={cn(
+          height,
+          "rounded-lg bg-muted flex items-center justify-center",
+          className
+        )}
+      >
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2" />
           <p className="text-muted-foreground">Loading map...</p>
@@ -104,5 +158,14 @@ export function RouteMap({ route, currentPosition, isTracking }: RouteMapProps) 
     )
   }
 
-  return <div ref={mapContainerRef} className="relative h-96 rounded-lg overflow-hidden border border-border" />
+  return (
+    <div
+      ref={mapContainerRef}
+      className={cn(
+        height,
+        "rounded-lg overflow-hidden border border-border",
+        className
+      )}
+    />
+  )
 }

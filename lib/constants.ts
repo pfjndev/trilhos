@@ -2,14 +2,6 @@
  * Configuration constants for the location tracking application
  */
 
-// Auto-save configuration
-export const AUTO_SAVE_CONFIG = {
-  /** Interval between auto-saves in milliseconds (30 seconds) */
-  INTERVAL_MS: 30_000,
-  /** Number of new points that trigger an auto-save */
-  POINT_THRESHOLD: 10,
-} as const
-
 // Geolocation configuration
 export const GEOLOCATION_CONFIG = {
   /** Use high accuracy GPS */
@@ -43,11 +35,5 @@ export const MAP_CONFIG = {
 } as const
 
 // Route status values
-export const ROUTE_STATUSES = ["active", "completed", "abandoned"] as const
+export const ROUTE_STATUSES = ["active", "completed"] as const
 export type RouteStatus = (typeof ROUTE_STATUSES)[number]
-
-// Local storage keys
-export const STORAGE_KEYS = {
-  PENDING_ROUTE: "trilhos_pending_route",
-  DEVICE_ID: "trilhos_device_id",
-} as const
