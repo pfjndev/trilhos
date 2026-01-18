@@ -12,10 +12,6 @@
 
 ---
 
-## 📸 Screenshots
-
----
-
 ## Screenshots
 
 ### Login
@@ -62,7 +58,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 - **Real-time GPS Tracking** - High-accuracy location tracking using browser Geolocation API
 - **Interactive Maps** - Leaflet-based maps with live position and route visualization
@@ -76,7 +72,7 @@
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 **Core:** Next.js 16 · React 19 · TypeScript 5 · PostgreSQL 16
 
@@ -86,15 +82,15 @@
 
 **Maps:** Leaflet · OpenStreetMap
 
-📚 **Full details:** See the [Tech Stack wiki page](docs/wiki/Tech-Stack.md)
+**Full details:** See the [Tech Stack](https://github.com/pfjndev/trilhos/wiki/Tech-Stack) wiki page
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ```bash
 # Clone and install
-git clone https://github.com/your-username/trilhos.git
+git clone https://github.com/pfjndev/trilhos.git
 cd trilhos
 npm install
 
@@ -111,35 +107,35 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000)
 
-**For mobile testing with HTTPS:** See the [Docker Setup guide](docs/wiki/Docker-Setup.md)
+**For mobile testing with HTTPS:** See the [Docker Setup](https://github.com/pfjndev/trilhos/wiki/Docker-Setup) guide
 
 ---
 
-## 📖 Documentation
+## Documentation
 
-Comprehensive documentation is available in the wiki:
+Comprehensive documentation is available in the [Wiki](https://github.com/pfjndev/trilhos/wiki):
 
 ### Getting Started
-- **[Getting Started](docs/wiki/Getting-Started.md)** - Installation and setup
-- **[Tech Stack](docs/wiki/Tech-Stack.md)** - Technologies and libraries
-- **[Project Structure](docs/wiki/Project-Structure.md)** - Directory layout
+- **[Getting Started](https://github.com/pfjndev/trilhos/wiki/Getting-Started)** - Installation and setup
+- **[Tech Stack](https://github.com/pfjndev/trilhos/wiki/Tech-Stack)** - Technologies and libraries
+- **[Project Structure](https://github.com/pfjndev/trilhos/wiki/Project-Structure)** - Directory layout
 
 ### Architecture & API
-- **[Architecture Overview](docs/wiki/Architecture-Overview.md)** - System design and data flow
-- **[Component Reference](docs/wiki/Component-Reference.md)** - UI components catalog
-- **[Hooks Reference](docs/wiki/Hooks-Reference.md)** - Custom React hooks
-- **[Server Actions Reference](docs/wiki/Server-Actions-Reference.md)** - Backend actions
+- **[Architecture Overview](https://github.com/pfjndev/trilhos/wiki/Architecture-Overview)** - System design and data flow
+- **[Component Reference](https://github.com/pfjndev/trilhos/wiki/Component-Reference)** - UI components catalog
+- **[Hooks Reference](https://github.com/pfjndev/trilhos/wiki/Hooks-Reference)** - Custom React hooks
+- **[Server Actions Reference](https://github.com/pfjndev/trilhos/wiki/Server-Actions-Reference)** - Backend actions
 
 ### Development & Deployment
-- **[Development Guide](docs/wiki/Development-Guide.md)** - Code style and patterns
-- **[Docker Setup](docs/wiki/Docker-Setup.md)** - Local HTTPS development
-- **[Deployment Guide](docs/wiki/Deployment-Guide.md)** - Production deployment
+- **[Development Guide](https://github.com/pfjndev/trilhos/wiki/Development-Guide)** - Code style and patterns
+- **[Docker Setup](https://github.com/pfjndev/trilhos/wiki/Docker-Setup)** - Local HTTPS development
+- **[Deployment Guide](https://github.com/pfjndev/trilhos/wiki/Deployment-Guide)** - Production deployment
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please see the [Development Guide](docs/wiki/Development-Guide.md) for:
+We welcome contributions! Please see the [Development Guide](https://github.com/pfjndev/trilhos/wiki/Development-Guide) for:
 
 - Code style guidelines
 - Component patterns
@@ -148,18 +144,12 @@ We welcome contributions! Please see the [Development Guide](docs/wiki/Developme
 
 ---
 
-## 📄 License
+## Links
 
-This project is open source. See LICENSE for details.
-
----
-
-## 🔗 Links
-
-- [Documentation Wiki](docs/wiki/Home.md)
-- [Report Issues](https://github.com/your-username/trilhos/issues)
-- [Discussions](https://github.com/your-username/trilhos/discussions)
+- [Documentation Wiki](https://github.com/pfjndev/trilhos/wiki)
+- [Report Issues](https://github.com/pfjndev/trilhos/issues)
+- [Discussions](https://github.com/pfjndev/trilhos/discussions)
 
 ---
 
-**Built with ❤️ using Next.js, React, and TypeScript**
+**Built with Next.js, React, and TypeScript**
