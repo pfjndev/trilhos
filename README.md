@@ -1,71 +1,165 @@
-# trilhos-next
+# Trilhos
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+> GPS route tracking PWA built with Next.js
 
-## Getting Started
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-First, run the development server:
+**Trilhos** (Portuguese for "tracks" or "trails") is a privacy-respecting GPS route tracking Progressive Web App. Track your outdoor activities in real-time, save routes with automatic location-based naming, and view your activity history.
+
+---
+
+## 📸 Screenshots
+
+---
+
+## Screenshots
+
+### Login
+
+<p align="center">
+  <img src="docs/screenshots/login-light.webp" width="300" alt="Login - Light Mode" />
+  <img src="docs/screenshots/login-dark.webp" width="300" alt="Login - Dark Mode" />
+</p>
+
+### Register
+
+<p align="center">
+  <img src="docs/screenshots/register-light.webp" width="300" alt="Register - Light Mode" />
+  <img src="docs/screenshots/register-dark.webp" width="300" alt="Register - Dark Mode" />
+</p>
+
+### Home (GPS Tracking)
+
+<p align="center">
+  <img src="docs/screenshots/home-light.webp" width="300" alt="Home - Light Mode" />
+  <img src="docs/screenshots/home-dark.webp" width="300" alt="Home - Dark Mode" />
+</p>
+
+### Activity Feed
+
+<p align="center">
+  <img src="docs/screenshots/activity-light.webp" width="300" alt="Activity Feed - Light Mode" />
+  <img src="docs/screenshots/activity-dark.webp" width="300" alt="Activity Feed - Dark Mode" />
+</p>
+
+### Route History
+
+<p align="center">
+  <img src="docs/screenshots/history-light.webp" width="300" alt="Route History - Light Mode" />
+  <img src="docs/screenshots/history-dark.webp" width="300" alt="Route History - Dark Mode" />
+</p>
+
+### Route Details
+
+<p align="center">
+  <img src="docs/screenshots/details-light.webp" width="300" alt="Route Details - Light Mode" />
+  <img src="docs/screenshots/details-dark.webp" width="300" alt="Route Details - Dark Mode" />
+</p>
+
+---
+
+## ✨ Features
+
+- **Real-time GPS Tracking** - High-accuracy location tracking using browser Geolocation API
+- **Interactive Maps** - Leaflet-based maps with live position and route visualization
+- **Auto-generated Route Names** - Reverse geocoding via OpenStreetMap Nominatim
+- **Route Statistics** - Distance (Haversine formula), duration, average speed
+- **Route History** - Personal history of all completed routes
+- **Activity Feed** - Community feed showing routes from all users
+- **User Authentication** - Email/password + OAuth (Google, GitHub)
+- **Dark Mode** - System-aware theme with persistent preference
+- **Mobile-first Design** - Responsive UI with safe area handling for notched devices
+
+---
+
+## 🚀 Tech Stack
+
+**Core:** Next.js 16 · React 19 · TypeScript 5 · PostgreSQL 16
+
+**UI:** Tailwind CSS 4 · shadcn/ui · Radix UI · Lucide Icons
+
+**Backend:** Drizzle ORM · NextAuth.js v5 · Server Actions
+
+**Maps:** Leaflet · OpenStreetMap
+
+📚 **Full details:** See the [Tech Stack wiki page](docs/wiki/Tech-Stack.md)
+
+---
+
+## ⚡ Quick Start
 
 ```bash
+# Clone and install
+git clone https://github.com/your-username/trilhos.git
+cd trilhos
+npm install
+
+# Configure environment
+cp .env.example .env.local
+# Edit .env.local with your DATABASE_URL and AUTH_SECRET
+
+# Setup database
+npx drizzle-kit push
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**For mobile testing with HTTPS:** See the [Docker Setup guide](docs/wiki/Docker-Setup.md)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Docker with HTTPS
+## 📖 Documentation
 
-The project includes nginx as a reverse proxy with HTTPS support for testing the Geolocation API on mobile devices.
+Comprehensive documentation is available in the wiki:
 
-### First-time setup
+### Getting Started
+- **[Getting Started](docs/wiki/Getting-Started.md)** - Installation and setup
+- **[Tech Stack](docs/wiki/Tech-Stack.md)** - Technologies and libraries
+- **[Project Structure](docs/wiki/Project-Structure.md)** - Directory layout
 
-Generate a self-signed SSL certificate:
+### Architecture & API
+- **[Architecture Overview](docs/wiki/Architecture-Overview.md)** - System design and data flow
+- **[Component Reference](docs/wiki/Component-Reference.md)** - UI components catalog
+- **[Hooks Reference](docs/wiki/Hooks-Reference.md)** - Custom React hooks
+- **[Server Actions Reference](docs/wiki/Server-Actions-Reference.md)** - Backend actions
 
-```bash
-./nginx/generate-ssl.sh
-```
+### Development & Deployment
+- **[Development Guide](docs/wiki/Development-Guide.md)** - Code style and patterns
+- **[Docker Setup](docs/wiki/Docker-Setup.md)** - Local HTTPS development
+- **[Deployment Guide](docs/wiki/Deployment-Guide.md)** - Production deployment
 
-### Run the application
+---
 
-- Production mode with HTTPS:
-  - `docker compose up --build`
-  - Access via [https://localhost](https://localhost) or https://LAN_IP from your phone
-  - Nginx proxies requests to the Next.js app on the `trilhos-docker-network`
-  
-- Dev mode with hot reload:
-  - `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`
-  - Mounts source code for live updates
+## 🤝 Contributing
 
-### Test from your phone (LAN)
+We welcome contributions! Please see the [Development Guide](docs/wiki/Development-Guide.md) for:
 
-1. Generate SSL certificates: `./nginx/generate-ssl.sh`
-2. Find your LAN IP (examples: macOS: `ipconfig getifaddr en0`, Linux: `hostname -I`, Windows: `ipconfig | findstr IPv4`)
-3. Start the containers: `docker compose up --build`
-4. On your phone, navigate to `https://LAN_IP`
-5. Accept the self-signed certificate warning (required for geolocation API)
+- Code style guidelines
+- Component patterns
+- Server Action conventions
+- Testing guidelines
 
-**Note**: The Geolocation API requires a secure context (HTTPS). Self-signed certificates will show a browser warning that you must accept. For production, use valid certificates from Let's Encrypt or a trusted CA.
+---
 
-## Learn More
+## 📄 License
 
-To learn more about Next.js, take a look at the following resources:
+This project is open source. See LICENSE for details.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔗 Links
 
-## Deploy on Vercel
+- [Documentation Wiki](docs/wiki/Home.md)
+- [Report Issues](https://github.com/your-username/trilhos/issues)
+- [Discussions](https://github.com/your-username/trilhos/discussions)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Built with ❤️ using Next.js, React, and TypeScript**
