@@ -1,0 +1,56 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      AUTH_TRUST_HOST: "true"
+      AUTH_SECRET: ${AUTH_SECRET}
+      HOSTNAME: ${WEB_HOSTNAME}
+      PORT: "3000"
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${DATABASE_HOST}:5432/${DB_NAME}
+    networks:
+      - trilhos
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000', res => { if (res.statusCode !== 200) { process.exit(1); } res.resume(); res.on('end', () => process.exit(0)); }).on('error', () => process.exit(1));",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - database
+
+  database:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks:
+      - trilhos
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U ${DB_USER} -d ${DB_NAME}'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  pgdata:
+  
+networks:
+  trilhos:

@@ -1,39 +1,28 @@
-networks:
-  trilhos-docker-network:
-    name: trilhos-docker-network
-
 services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: trilhos-next:latest
-    expose:
-      - "3000"
+      dockerfile: Dockerfile.dev
+    image: trilhos-next:dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/.next
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: "1"
-      HOSTNAME: 0.0.0.0
-      PORT: "3000"
+      WATCHPACK_POLLING: "true"
+      AUTH_TRUST_HOST: "true"
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}
     env_file:
       - .env
     networks:
-      - trilhos-docker-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "require('http').get('http://localhost:3000', res => { if (res.statusCode !== 200) { process.exit(1); } res.resume(); res.on('end', () => process.exit(0)); }).on('error', () => process.exit(1));",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
+      - trilhos
     depends_on:
-      - database
+      database:
+        condition: service_healthy
 
   database:
     image: postgres:18-alpine
@@ -47,9 +36,15 @@ services:
     ports:
       - "${DB_PORT}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_dev:/var/lib/postgresql/data
     networks:
-      - trilhos-docker-network
+      - trilhos
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   caddy:
     image: caddy:2.11-alpine
@@ -58,18 +53,20 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
-    environment:
-      DOMAIN: ${DOMAIN:-localhost}
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - caddy_data_dev:/data
+      - caddy_config_dev:/config
     networks:
-      - trilhos-docker-network
+      - trilhos
     depends_on:
       - web
 
 volumes:
-  pgdata:
-  caddy_data:
-  caddy_config:
+  pgdata_dev:
+  caddy_data_dev:
+  caddy_config_dev:
+
+networks:
+  trilhos:
+    name: trilhos
