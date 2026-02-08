@@ -7,11 +7,11 @@ export const GEOLOCATION_CONFIG = {
   /** Use high accuracy GPS */
   HIGH_ACCURACY: true,
   /** Timeout for initial position request in milliseconds */
-  INITIAL_TIMEOUT_MS: 10_000,
+  INITIAL_TIMEOUT_MS: 15_000,
   /** Timeout for position watch updates in milliseconds */
-  WATCH_TIMEOUT_MS: 5_000,
+  WATCH_TIMEOUT_MS: 15_000,
   /** Maximum age of cached position in milliseconds */
-  MAXIMUM_AGE_MS: 1_500,
+  MAXIMUM_AGE_MS: 5_000,
 } as const
 
 // Map display configuration
