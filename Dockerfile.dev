@@ -17,13 +17,8 @@ RUN \
 # Copy source code (volumes will override in compose)
 COPY . .
 
-# Copy and configure entrypoint script
-COPY docker-entrypoint.dev.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 
 EXPOSE 3000
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["sh", "-c", "npx drizzle-kit migrate && npm run dev"]
