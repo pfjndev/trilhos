@@ -20,7 +20,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "require('http').get('http://localhost:3000', res => { if (res.statusCode !== 200) { process.exit(1); } res.resume(); res.on('end', () => process.exit(0)); }).on('error', () => process.exit(1));",
+          "require('http').get('http://0.0.0.0:3000', res => { if (res.statusCode !== 200) { process.exit(1); } res.resume(); res.on('end', () => process.exit(0)); }).on('error', () => process.exit(1));",
         ]
       interval: 30s
       timeout: 5s
