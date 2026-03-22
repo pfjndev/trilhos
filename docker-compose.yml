@@ -5,15 +5,13 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     init: true
-    ports:
-      - "3000:3000"
+
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
       AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
       AUTH_SECRET: ${AUTH_SECRET}
       HOSTNAME: ${WEB_HOSTNAME}
-      PORT: "3000"
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     networks:
       - trilhos
