@@ -2,27 +2,47 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    image: trilhos-next:dev
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
     ports:
       - "3000:3000"
-    volumes:
-      - ./:/app
-      - /app/node_modules
-      - /app/.next
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
-      WATCHPACK_POLLING: "true"
-      AUTH_TRUST_HOST: "true"
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}
-    env_file:
-      - .env
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
+      AUTH_SECRET: ${AUTH_SECRET}
+      HOSTNAME: ${WEB_HOSTNAME}
+      PORT: "3000"
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     networks:
       - trilhos
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=3 --spider http://0.0.0.0:3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
       database:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    restart: "no"
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    command: ["npx", "drizzle-kit", "migrate"]
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - trilhos
 
   database:
     image: postgres:18-alpine
@@ -31,42 +51,21 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    env_file:
-      - .env
-    ports:
-      - "${DB_PORT}:5432"
     volumes:
-      - pgdata_dev:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     networks:
       - trilhos
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U ${DB_USER} -d ${DB_NAME}'
+      interval: 30s
+      timeout: 10s
       retries: 5
-      start_period: 10s
-
-  caddy:
-    image: caddy:2.11-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
-      - caddy_data_dev:/data
-      - caddy_config_dev:/config
-    networks:
-      - trilhos
-    depends_on:
-      - web
+      start_period: 30s
 
 volumes:
-  pgdata_dev:
-  caddy_data_dev:
-  caddy_config_dev:
-
+  pgdata:
+  
 networks:
   trilhos:
-    name: trilhos
