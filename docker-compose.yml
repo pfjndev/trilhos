@@ -16,7 +16,7 @@ services:
     networks:
       - trilhos
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=3 --spider http://0.0.0.0:3000"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=3 --spider http://0.0.0.0:3000" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -35,7 +35,7 @@ services:
     restart: "no"
     environment:
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
-    command: ["npx", "drizzle-kit", "migrate"]
+    command: [ "npx", "drizzle-kit", "migrate" ]
     depends_on:
       database:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
       - trilhos
 
   database:
-    image: postgres:18-alpine
+    image: postgres:alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -64,6 +64,7 @@ services:
 
 volumes:
   pgdata:
-  
+
+
 networks:
   trilhos:

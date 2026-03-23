@@ -1,7 +1,6 @@
-# syntax=docker.io/docker/dockerfile:1
-
-FROM node:25-alpine AS base
+FROM node:current-alpine AS base
 WORKDIR /app
+RUN npm install -g npm@latest
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Production dependencies layer
@@ -56,7 +55,7 @@ FROM base AS runner
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+  adduser --system --uid 1001 nextjs
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
